@@ -1,5 +1,7 @@
 // Business rule supplied by the operator: allow time for arrival and transfer.
 function scheduleIssue(form) {
+  if(form.nightReturn && form.nightReturnTime && !['18:00','20:00'].includes(form.nightReturnTime) && !(form.items[3].enabled && Number(form.yangcaoPlan)===1)) return '夜间雪乡回雪谷请选择18:00或20:00'
+  if(form.items[3].enabled && form.date && form.yangcaoDate && form.yangcaoDate<form.date) return '羊草山游玩日期不能早于出行日期'
   if (!form.items[2].enabled) return ''
   const playDate=form.wusongDate||form.date
   if(form.date && playDate && playDate<form.date) return '雾凇岭游玩日期不能早于出行日期'

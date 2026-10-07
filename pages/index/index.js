@@ -1,9 +1,10 @@
+const {itinerary,itineraryText}=require('../../utils/itinerary')
 const {scheduleIssue}=require('../../utils/schedule')
 const {ROUTES,fare}=require('../../utils/routes')
 const {ITEMS,calculate,money}=require('../../utils/quote')
-const fresh=()=>({transportType:'routes',outbound:'0',outboundTime:'6:00',inbound:'2',customer:'',date:'',people:'2',nights:'1',rooms:'1',wusongTime:'',wusongDate:'',wusongPackage:true,wusongHalf:'0',wusongFree:'0',yangcaoOptions:true,yangcaoPlan:0,nightReturn:false,yangcaoHorse:false,yangcaoSnow:0,yangcaoFree:'0',yangcaoSlide:false,yangcaoSlideMode:0,note:'',items:ITEMS.map(item=>({...item,enabled:true,price:item.defaultPrice||'',mode:0}))})
+const fresh=()=>({transportType:'routes',outbound:'0',outboundTime:'6:00',inbound:'2',customer:'',date:'',otherOutboundTime:'',inboundDate:'',inboundTime:'',yangcaoDate:'',yangcaoTime:'',nightReturnDate:'',nightReturnTime:'',people:'2',nights:'1',rooms:'1',wusongTime:'',wusongDate:'',wusongPackage:true,wusongHalf:'0',wusongFree:'0',yangcaoOptions:true,yangcaoPlan:0,nightReturn:false,yangcaoHorse:false,yangcaoSnow:0,yangcaoFree:'0',yangcaoSlide:false,yangcaoSlideMode:0,note:'',items:ITEMS.map(item=>({...item,enabled:true,price:item.defaultPrice||'',mode:0}))})
 Page({
- data:{form:fresh(),result:null,history:[],scheduleMessage:'',outboundTimes:['待定','6:00','8:00','12:30–13:00'],outboundTimeIndex:1,yangcaoPlanLabels:['单项组合 · 门票加选项目','羊草山套票 · 550元/人（不去雪乡）'],yangcaoSlideLabels:['不乘坐雪飘','往雪乡 · 雪飘80元/人','往雪谷 · 天下第一漂150元/人'],yangcaoSnowLabels:['不乘坐雪地摩托','半程 · 150元/人','全程登顶 · 300元/人（推荐）'],wusongTimes:['待定','7:00','9:00','12:30–13:00'],wusongTimeIndex:0,routes:ROUTES,routeLabels:['不含此车程',...ROUTES.map(r=>r.label+' · ¥'+r.price)],outboundIndex:1,inboundIndex:3,outboundRoute:ROUTES[0],inboundRoute:ROUTES[2],routeFare:160},
+ data:{form:fresh(),posterHeight:940,result:null,history:[],scheduleMessage:'',outboundTimes:['待定','6:00','8:00','12:30–13:00'],outboundTimeIndex:1,yangcaoPlanLabels:['单项组合 · 门票加选项目','羊草山套票 · 550元/人（不去雪乡）'],yangcaoSlideLabels:['不乘坐雪飘','往雪乡 · 雪飘80元/人','往雪谷 · 天下第一漂150元/人'],yangcaoSnowLabels:['不乘坐雪地摩托','半程 · 150元/人','全程登顶 · 300元/人（推荐）'],wusongTimes:['待定','7:00','9:00','12:30–13:00'],wusongTimeIndex:0,routes:ROUTES,routeLabels:['不含此车程',...ROUTES.map(r=>r.label+' · ¥'+r.price)],outboundIndex:1,inboundIndex:3,outboundRoute:ROUTES[0],inboundRoute:ROUTES[2],routeFare:160},
  onLoad(){this.refreshHistory();this.syncSchedule()},
  syncRoutes(){const f=this.data.form;this.setData({outboundIndex:f.outbound===''?0:Number(f.outbound)+1,inboundIndex:f.inbound===''?0:Number(f.inbound)+1,outboundRoute:ROUTES.find(r=>r.id===f.outbound)||null,inboundRoute:ROUTES.find(r=>r.id===f.inbound)||null,routeFare:fare(f.outbound,f.inbound)})},
  syncSchedule(){this.setData({scheduleMessage:scheduleIssue(this.data.form),outboundTimeIndex:Math.max(0,this.data.outboundTimes.indexOf(this.data.form.outboundTime))})},
@@ -15,10 +16,32 @@ Page({
  refreshHistory(){this.setData({history:wx.getStorageSync('xuegu-quotes')||[]})},
  field(e){this.setData({['form.'+e.currentTarget.dataset.field]:e.detail.value,result:null});this.syncSchedule()},
  item(e){const {index,field}=e.currentTarget.dataset;this.setData({['form.items['+index+'].'+field]:e.detail.value,result:null});this.syncSchedule()},
- quote(){try{const result=calculate(this.data.form);this.setData({result:{...result,total:money(result.totalCents),perPerson:money(result.perPersonCents),lines:result.lines.map(line=>({...line,price:money(line.unitCents),amount:money(line.amountCents)}))}})}catch(err){wx.showToast({title:err.message,icon:'none'});return false}return true},
+ quote(){try{const result=calculate(this.data.form);this.setData({result:{...result,itinerary:itinerary(this.data.form),total:money(result.totalCents),perPerson:money(result.perPersonCents),lines:result.lines.map(line=>({...line,price:money(line.unitCents),amount:money(line.amountCents)}))}})}catch(err){wx.showToast({title:err.message,icon:'none'});return false}return true},
  save(){if(!this.quote())return;const entry={id:Date.now(),label:this.data.form.customer||'未填写客户',total:this.data.result.total,form:JSON.parse(JSON.stringify(this.data.form))};try{wx.setStorageSync('xuegu-quotes',[entry,...this.data.history].slice(0,30));this.refreshHistory();wx.showToast({title:'已保存'})}catch(e){wx.showToast({title:'保存失败，请检查存储空间',icon:'none'})}},
  restore(e){const entry=this.data.history.find(x=>x.id===Number(e.currentTarget.dataset.id));if(entry){this.setData({form:{transportType:'manual',outbound:'',outboundTime:'',inbound:'',wusongTime:'',wusongDate:'',wusongPackage:false,wusongHalf:'0',wusongFree:'0',yangcaoOptions:false,yangcaoPlan:0,nightReturn:false,yangcaoHorse:false,yangcaoSnow:0,yangcaoFree:'0',yangcaoSlide:false,...JSON.parse(JSON.stringify(entry.form))},result:null});if(this.data.form.yangcaoSlideMode===undefined)this.setData({'form.yangcaoSlideMode':this.data.form.yangcaoSlide?1:0});this.setData({wusongTimeIndex:Math.max(0,this.data.wusongTimes.indexOf(this.data.form.wusongTime))});this.syncRoutes();this.syncSchedule();this.quote()}},
  reset(){this.setData({form:fresh(),result:null,wusongTimeIndex:0});this.syncRoutes();this.syncSchedule()},
- async poster(){if(!this.quote())return;const r=this.data.result,f=this.data.form;const ctx=wx.createCanvasContext('quoteCanvas',this);ctx.setFillStyle('#eef7f7');ctx.fillRect(0,0,600,940);ctx.setFillStyle('#173b42');ctx.setFontSize(30);ctx.fillText('雪谷 · 行程报价单',40,65);ctx.setFontSize(21);ctx.fillText('客户：'+(f.customer||'未填写').slice(0,20),40,115);ctx.fillText('出行：'+(f.date||'待定')+'  '+f.people+'人 / '+f.nights+'晚',40,155);let y=220;r.lines.filter(x=>x.enabled).forEach(line=>{ctx.fillText(line.name+'  ¥'+line.amount,40,y);ctx.setFontSize(17);const detail=line.detail || ('¥'+line.price+' × '+line.qty+'（'+line.unit+'）');ctx.fillText(detail.slice(0,30),40,y+30);if(detail.length>30)ctx.fillText(detail.slice(30),40,y+52);ctx.setFontSize(21);y+=90});if(f.items[2].enabled){ctx.setFontSize(17);ctx.fillText('雾凇岭：'+(f.wusongDate||f.date||'日期待定')+' '+(f.wusongTime||'待定')+' · 现金支付',40,705)}ctx.setFontSize(30);ctx.fillText('合计 ¥'+r.total,40,750);ctx.setFontSize(18);ctx.fillText('人均约 ¥'+r.perPerson,40,790);ctx.fillText('备注：'+(f.note||'费用以最终确认为准').slice(0,26),40,840);ctx.fillText('报价仅含列明项目；最终价格请与商家确认',40,900);ctx.draw(false,()=>wx.canvasToTempFilePath({canvasId:'quoteCanvas',width:600,height:940,destWidth:1200,destHeight:1880,success:res=>wx.previewImage({urls:[res.tempFilePath]}),fail:()=>wx.showToast({title:'图片生成失败',icon:'none'})},this))},
+ copyItinerary(){if(!this.quote())return;wx.setClipboardData({data:itineraryText(this.data.form,this.data.result,this.data.result.itinerary),fail:()=>wx.showToast({title:'复制失败',icon:'none'})})},
+ poster(){
+  if(!this.quote())return
+  const r=this.data.result,f=this.data.form,render=[]
+  const line=(text,size=19,gap=28)=>render.push({text,size,gap})
+  const wrap=(text,size=17)=>{const chunks=String(text).match(/.{1,28}/g)||[''];chunks.forEach(chunk=>line(chunk,size,25))}
+  line('雪谷 · 行程报价单',30,48)
+  line('客户：'+(f.customer||'未填写').slice(0,20))
+  line(f.people+'人 / '+f.nights+'晚',19,40)
+  line('时间行程',24,38)
+  r.itinerary.forEach(entry=>{line(entry.dateLabel+' '+entry.time,18,26);wrap(entry.title,21);wrap(entry.detail);line('',17,14)})
+  line('费用明细',24,38)
+  r.lines.filter(x=>x.enabled).forEach(entry=>{line(entry.name+'  ¥'+entry.amount,21,30);wrap(entry.detail||('¥'+entry.price+' × '+entry.qty+'（'+entry.unit+'）'));line('',17,12)})
+  line('合计 ¥'+r.total,30,44);line('人均约 ¥'+r.perPerson,19,32)
+  wrap('备注：'+(f.note||'费用以最终确认为准'))
+  wrap('预计时间以路况及实际安排为准')
+  const height=100+render.reduce((sum,row)=>sum+row.gap,0)
+  this.setData({posterHeight:height},()=>{
+   const ctx=wx.createCanvasContext('quoteCanvas',this);ctx.setFillStyle('#eef7f7');ctx.fillRect(0,0,600,height);ctx.setFillStyle('#173b42');let y=55
+   render.forEach(row=>{ctx.setFontSize(row.size);ctx.fillText(row.text,40,y);y+=row.gap})
+   ctx.draw(false,()=>wx.canvasToTempFilePath({canvasId:'quoteCanvas',width:600,height,destWidth:600,destHeight:height,success:res=>wx.previewImage({urls:[res.tempFilePath]}),fail:()=>wx.showToast({title:'图片生成失败，可复制文字行程',icon:'none'})},this))
+  })
+ },
  onShareAppMessage(){return {title:'雪谷旅行 · 制作行程报价',path:'/pages/index/index'}}
 })

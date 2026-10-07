@@ -1,0 +1,8 @@
+const test=require('node:test')
+const assert=require('node:assert/strict')
+const {itinerary,itineraryText}=require('../utils/itinerary')
+function form(){return {date:'2026-12-10',people:'2',nights:'1',rooms:'1',transportType:'routes',outbound:'0',outboundTime:'6:00',inbound:'2',inboundDate:'2026-12-12',inboundTime:'9:00',wusongDate:'2026-12-10',wusongTime:'12:30–13:00',yangcaoOptions:true,yangcaoPlan:1,yangcaoDate:'2026-12-11',yangcaoTime:'9:00',items:[{enabled:true},{enabled:true},{enabled:true},{enabled:true}]}}
+test('具体时间行程与跨日排序',()=>{const rows=itinerary(form());assert.deepEqual(rows.slice(0,3).map(x=>x.time),['6:00','11:00','12:30–13:00']);assert.match(rows[0].title,/哈尔滨中央大街/);assert.match(rows[2].title,/雾凇岭/);assert.equal(rows[3].date,'2026-12-11');assert.match(rows[3].detail,/马拉爬犁往返/);assert.equal(rows[4].date,'2026-12-12')})
+test('套票不生成额外夜间返程，线路已含不重复生成',()=>{const f=form();f.nightReturn=true;assert.equal(itinerary(f).filter(x=>x.title.includes('夜间返程')).length,0);f.yangcaoPlan=0;f.inbound='15';assert.equal(itinerary(f).filter(x=>x.title.includes('雪乡五常山门')).length,1)})
+test('未选时间明确待定，关闭项目不生成行程',()=>{const f=form();f.wusongTime='';delete f.yangcaoDate;delete f.yangcaoTime;const rows=itinerary(f);assert.equal(rows.find(x=>x.title.includes('雾凇岭')).time,'时间待定');assert.equal(rows.find(x=>x.title.includes('550')).dateLabel,'日期待定');f.items[2].enabled=false;assert.ok(!itinerary(f).some(x=>x.title.includes('雾凇岭')))})
+test('文字行程保留时间和价格',()=>{const f=form();const text=itineraryText(f,{total:'1100.00',perPerson:'550.00',lines:[{name:'羊草山',amount:'1100.00',enabled:true}]},itinerary(f));assert.match(text,/6:00/);assert.match(text,/12:30–13:00/);assert.match(text,/总价：¥1100.00/)})

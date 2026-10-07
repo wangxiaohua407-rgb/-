@@ -33,6 +33,9 @@ function calculate(form) {
       if(full<0) throw new Error('半票与免票人数不能超过出行总人数')
       return {name:'雾凇岭套票',unit:'全票/半票/免票',qty:people,unitCents:40000,amountCents:full*40000+half*20000,enabled:true,detail:'全票'+full+'人×400元，半票'+half+'人×200元，免票'+free+'人'}
     }
+    if(index===3 && row.enabled && form.yangcaoOptions && Number(form.yangcaoPlan||0)===1){
+      return {name:'羊草山550套票',unit:'每人',qty:people,unitCents:55000,amountCents:people*55000,enabled:true,detail:'550元/人；不去雪乡'}
+    }
     if(index===3 && row.enabled && form.yangcaoOptions){
       const snow=Number(form.yangcaoSnow)
       if(![0,1,2].includes(snow)) throw new Error('请选择有效雪地摩托方案')
@@ -48,6 +51,10 @@ function calculate(form) {
     }
     return {name:item.name,unit:index===0 && form.transportType==='routes'?'每人所选车程':item.units[mode],qty,unitCents,amountCents:qty*unitCents,enabled:row.enabled}
   })
+  if(form.nightReturn && !(form.items[3].enabled && form.yangcaoOptions && Number(form.yangcaoPlan)===1)){
+    const covered=form.transportType==='routes' && form.items[0].enabled && [form.outbound,form.inbound].includes('15')
+    lines.push({name:'夜间雪乡→雪谷车票',unit:'每人',qty:people,unitCents:covered?0:6000,amountCents:covered?0:people*6000,enabled:true,detail:covered?'已含在所选直通车费中，不重复收费':'18:00 / 20:00；60元/人'})
+  }
   const totalCents=lines.reduce((sum,line)=>sum+line.amountCents,0)
   return {lines,totalCents,perPersonCents:Math.round(totalCents/people)}
 }

@@ -4,7 +4,7 @@ const {ROUTES,fare,departures}=require('../../utils/routes')
 const {ITEMS,calculate,money}=require('../../utils/quote')
 const fresh=()=>({transportType:'routes',outbound:'0',outboundTime:'6:00',inbound:'2',customer:'',date:'',otherOutboundTime:'',inboundDate:'',inboundTime:'',yangcaoDate:'',yangcaoTime:'',nightReturnDate:'',nightReturnTime:'',people:'2',nights:'1',rooms:'1',wusongTime:'',wusongDate:'',wusongPackage:true,wusongHalf:'0',wusongFree:'0',yangcaoOptions:true,yangcaoPlan:0,nightReturn:false,yangcaoHorse:false,yangcaoSnow:0,yangcaoFree:'0',yangcaoSlide:false,yangcaoSlideMode:0,note:'',items:ITEMS.map(item=>({...item,enabled:true,price:item.defaultPrice||'',mode:0}))})
 Page({
- data:{form:fresh(),posterHeight:940,result:null,history:[],scheduleMessage:'',outboundTimes:['待定','6:00','8:00','12:30–13:00'],outboundTimeIndex:1,otherOutboundTimeIndex:0,inboundTimes:['待定',...departures('2')],inboundTimeIndex:0,nightReturnTimes:['待定','18:00','20:00'],nightReturnTimeIndex:0,yangcaoPlanLabels:['单项组合 · 门票加选项目','羊草山套票 · 550元/人（不去雪乡）'],yangcaoSlideLabels:['不乘坐雪飘','往雪乡 · 雪飘80元/人','往雪谷 · 天下第一漂150元/人'],yangcaoSnowLabels:['不乘坐雪地摩托','半程 · 150元/人','全程登顶 · 300元/人（推荐）'],wusongTimes:['待定','7:00','9:00','12:30–13:00'],wusongTimeIndex:0,routes:ROUTES,routeLabels:['不含此车程',...ROUTES.map(r=>r.label+' · ¥'+r.price)],outboundIndex:1,inboundIndex:3,outboundRoute:ROUTES[0],inboundRoute:ROUTES[2],routeFare:160},
+ data:{form:fresh(),detailOpen:{wusong:false,yangcao:false},posterHeight:940,result:null,history:[],scheduleMessage:'',outboundTimes:['待定','6:00','8:00','12:30–13:00'],outboundTimeIndex:1,otherOutboundTimeIndex:0,inboundTimes:['待定',...departures('2')],inboundTimeIndex:0,nightReturnTimes:['待定','18:00','20:00'],nightReturnTimeIndex:0,yangcaoPlanLabels:['单项组合 · 门票加选项目','羊草山套票 · 550元/人（不去雪乡）'],yangcaoSlideLabels:['不乘坐雪飘','往雪乡 · 雪飘80元/人','往雪谷 · 天下第一漂150元/人'],yangcaoSnowLabels:['不乘坐雪地摩托','半程 · 150元/人','全程登顶 · 300元/人（推荐）'],wusongTimes:['待定','7:00','9:00','12:30–13:00'],wusongTimeIndex:0,routes:ROUTES,routeLabels:['不含此车程',...ROUTES.map(r=>r.label+' · ¥'+r.price)],outboundIndex:1,inboundIndex:3,outboundRoute:ROUTES[0],inboundRoute:ROUTES[2],routeFare:160},
  onLoad(){this.refreshHistory();this.syncRoutes();this.syncSchedule()},
  syncRoutes(){
   const f=this.data.form,changes={};const outboundField=f.outbound==='0'?'outboundTime':'otherOutboundTime'
@@ -21,6 +21,7 @@ Page({
  transport(e){this.setData({'form.transportType':Number(e.detail.value)===0?'routes':'manual',result:null});this.syncSchedule()},
  wusongTime(e){const index=Number(e.detail.value);this.setData({'form.wusongTime':index===0?'':this.data.wusongTimes[index],wusongTimeIndex:index,result:null});this.syncSchedule()},
  yangcaoPlan(e){const plan=Number(e.detail.value),updates={'form.yangcaoPlan':plan,result:null};if(plan===1){updates['form.nightReturn']=false;if(this.data.form.transportType==='routes' && this.data.form.inbound==='15')updates['form.inbound']='';}this.setData(updates);this.syncRoutes();this.syncSchedule()},
+ toggleDetails(e){const key=e.currentTarget.dataset.key;this.setData({['detailOpen.'+key]:!this.data.detailOpen[key]})},
  refreshHistory(){this.setData({history:wx.getStorageSync('xuegu-quotes')||[]})},
  field(e){this.setData({['form.'+e.currentTarget.dataset.field]:e.detail.value,result:null});this.syncSchedule()},
  item(e){const {index,field}=e.currentTarget.dataset;this.setData({['form.items['+index+'].'+field]:e.detail.value,result:null});this.syncSchedule()},
@@ -34,7 +35,7 @@ Page({
   const r=this.data.result,f=this.data.form,render=[]
   const line=(text,size=19,gap=28)=>render.push({text,size,gap})
   const wrap=(text,size=17)=>{const chunks=String(text).match(/.{1,28}/g)||[''];chunks.forEach(chunk=>line(chunk,size,25))}
-  line('雪谷 · 行程报价单',30,48)
+  line('雪谷小满客栈 · 专属行程',30,48)
   line('客户：'+(f.customer||'未填写').slice(0,20))
   line(f.people+'人 / '+f.nights+'晚',19,40)
   line('时间行程',24,38)
@@ -46,7 +47,7 @@ Page({
   wrap('预计时间以路况及实际安排为准')
   const height=100+render.reduce((sum,row)=>sum+row.gap,0)
   this.setData({posterHeight:height},()=>{
-   const ctx=wx.createCanvasContext('quoteCanvas',this);ctx.setFillStyle('#eef7f7');ctx.fillRect(0,0,600,height);ctx.setFillStyle('#173b42');let y=55
+   const ctx=wx.createCanvasContext('quoteCanvas',this);ctx.setFillStyle('#f4f5f7');ctx.fillRect(0,0,600,height);ctx.setFillStyle('#243f60');let y=55
    render.forEach(row=>{ctx.setFontSize(row.size);ctx.fillText(row.text,40,y);y+=row.gap})
    ctx.draw(false,()=>wx.canvasToTempFilePath({canvasId:'quoteCanvas',width:600,height,destWidth:600,destHeight:height,success:res=>wx.previewImage({urls:[res.tempFilePath]}),fail:()=>wx.showToast({title:'图片生成失败，可复制文字行程',icon:'none'})},this))
   })

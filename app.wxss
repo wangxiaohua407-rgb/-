@@ -1,3 +1,1 @@
-page{background:#eef7f7;color:#173b42;font-family: sans-serif}button::after{border:0}button{font-size:28rpx;border-radius:18rpx}input{font-size:28rpx}
-
-.card,.card text,.card input,.card picker,.card .row{color:#173b42}.card input{background:transparent}.summary,.summary text{color:#173b42}
+page{background:#f4f5f7;color:#243349;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:28rpx}view,text,input,textarea,button,picker{box-sizing:border-box}button::after{border:0}button{font-size:28rpx;border-radius:20rpx;font-weight:600}input,textarea{font-size:28rpx;color:#243349}.placeholder{color:#9aa3af;font-weight:400}switch{flex-shrink:0;transform:scale(.82);transform-origin:right center}button:active{opacity:.86}

@@ -34,7 +34,7 @@ function calculate(form) {
       return {name:'雾凇岭套票',unit:'全票/半票/免票',qty:people,unitCents:40000,amountCents:full*40000+half*20000,enabled:true,detail:'全票'+full+'人×400元，半票'+half+'人×200元，免票'+free+'人'}
     }
     if(index===3 && row.enabled && form.yangcaoOptions && Number(form.yangcaoPlan||0)===1){
-      return {name:'羊草山550套票',unit:'每人',qty:people,unitCents:55000,amountCents:people*55000,enabled:true,detail:'550元/人；不去雪乡'}
+      return {name:'羊草山550套票',unit:'每人',qty:people,unitCents:55000,amountCents:people*55000,enabled:true,detail:'550元/人：马拉爬犁往返、天下第一漂、雪地摩托；不去雪乡'}
     }
     if(index===3 && row.enabled && form.yangcaoOptions){
       const snow=Number(form.yangcaoSnow)

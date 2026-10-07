@@ -1,3 +1,4 @@
+const {scheduleIssue}=require('./schedule')
 const {fare}=require('./routes')
 const ITEMS = [
   {key:'transport', name:'往返车费', units:['整团往返','每人往返']},
@@ -15,6 +16,7 @@ function cents(value) {
   return Number(whole)*100 + Number(decimal.padEnd(2,'0'))
 }
 function calculate(form) {
+  const issue=scheduleIssue(form);if(issue) throw new Error(issue)
   const people=integer(form.people,'人数'), nights=integer(form.nights,'晚数'), rooms=integer(form.rooms,'房间数')
   const lines=ITEMS.map((item,index)=>{
     const row=form.items[index], mode=Number(row.mode)

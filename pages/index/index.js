@@ -1,13 +1,21 @@
 const {itinerary,itineraryText}=require('../../utils/itinerary')
 const {scheduleIssue}=require('../../utils/schedule')
-const {ROUTES,fare}=require('../../utils/routes')
+const {ROUTES,fare,departures}=require('../../utils/routes')
 const {ITEMS,calculate,money}=require('../../utils/quote')
 const fresh=()=>({transportType:'routes',outbound:'0',outboundTime:'6:00',inbound:'2',customer:'',date:'',otherOutboundTime:'',inboundDate:'',inboundTime:'',yangcaoDate:'',yangcaoTime:'',nightReturnDate:'',nightReturnTime:'',people:'2',nights:'1',rooms:'1',wusongTime:'',wusongDate:'',wusongPackage:true,wusongHalf:'0',wusongFree:'0',yangcaoOptions:true,yangcaoPlan:0,nightReturn:false,yangcaoHorse:false,yangcaoSnow:0,yangcaoFree:'0',yangcaoSlide:false,yangcaoSlideMode:0,note:'',items:ITEMS.map(item=>({...item,enabled:true,price:item.defaultPrice||'',mode:0}))})
 Page({
- data:{form:fresh(),posterHeight:940,result:null,history:[],scheduleMessage:'',outboundTimes:['待定','6:00','8:00','12:30–13:00'],outboundTimeIndex:1,yangcaoPlanLabels:['单项组合 · 门票加选项目','羊草山套票 · 550元/人（不去雪乡）'],yangcaoSlideLabels:['不乘坐雪飘','往雪乡 · 雪飘80元/人','往雪谷 · 天下第一漂150元/人'],yangcaoSnowLabels:['不乘坐雪地摩托','半程 · 150元/人','全程登顶 · 300元/人（推荐）'],wusongTimes:['待定','7:00','9:00','12:30–13:00'],wusongTimeIndex:0,routes:ROUTES,routeLabels:['不含此车程',...ROUTES.map(r=>r.label+' · ¥'+r.price)],outboundIndex:1,inboundIndex:3,outboundRoute:ROUTES[0],inboundRoute:ROUTES[2],routeFare:160},
- onLoad(){this.refreshHistory();this.syncSchedule()},
- syncRoutes(){const f=this.data.form;this.setData({outboundIndex:f.outbound===''?0:Number(f.outbound)+1,inboundIndex:f.inbound===''?0:Number(f.inbound)+1,outboundRoute:ROUTES.find(r=>r.id===f.outbound)||null,inboundRoute:ROUTES.find(r=>r.id===f.inbound)||null,routeFare:fare(f.outbound,f.inbound)})},
+ data:{form:fresh(),posterHeight:940,result:null,history:[],scheduleMessage:'',outboundTimes:['待定','6:00','8:00','12:30–13:00'],outboundTimeIndex:1,otherOutboundTimeIndex:0,inboundTimes:['待定',...departures('2')],inboundTimeIndex:0,nightReturnTimes:['待定','18:00','20:00'],nightReturnTimeIndex:0,yangcaoPlanLabels:['单项组合 · 门票加选项目','羊草山套票 · 550元/人（不去雪乡）'],yangcaoSlideLabels:['不乘坐雪飘','往雪乡 · 雪飘80元/人','往雪谷 · 天下第一漂150元/人'],yangcaoSnowLabels:['不乘坐雪地摩托','半程 · 150元/人','全程登顶 · 300元/人（推荐）'],wusongTimes:['待定','7:00','9:00','12:30–13:00'],wusongTimeIndex:0,routes:ROUTES,routeLabels:['不含此车程',...ROUTES.map(r=>r.label+' · ¥'+r.price)],outboundIndex:1,inboundIndex:3,outboundRoute:ROUTES[0],inboundRoute:ROUTES[2],routeFare:160},
+ onLoad(){this.refreshHistory();this.syncRoutes();this.syncSchedule()},
+ syncRoutes(){
+  const f=this.data.form,changes={};const outboundField=f.outbound==='0'?'outboundTime':'otherOutboundTime'
+  for(const [field,id] of [[outboundField,f.outbound],['inboundTime',f.inbound]]){
+   if(f[field] && !departures(id).includes(f[field])){changes['form.'+field]='';f[field]=''}
+  }
+  const outboundTimes=['待定',...departures(f.outbound)],inboundTimes=['待定',...departures(f.inbound)]
+  this.setData({...changes,outboundTimes,inboundTimes,outboundTimeIndex:Math.max(0,outboundTimes.indexOf(f.outboundTime)),otherOutboundTimeIndex:Math.max(0,outboundTimes.indexOf(f.otherOutboundTime)),inboundTimeIndex:Math.max(0,inboundTimes.indexOf(f.inboundTime)),nightReturnTimeIndex:Math.max(0,this.data.nightReturnTimes.indexOf(f.nightReturnTime)),outboundIndex:f.outbound===''?0:Number(f.outbound)+1,inboundIndex:f.inbound===''?0:Number(f.inbound)+1,outboundRoute:ROUTES.find(r=>r.id===f.outbound)||null,inboundRoute:ROUTES.find(r=>r.id===f.inbound)||null,routeFare:fare(f.outbound,f.inbound)})
+ },
  syncSchedule(){this.setData({scheduleMessage:scheduleIssue(this.data.form),outboundTimeIndex:Math.max(0,this.data.outboundTimes.indexOf(this.data.form.outboundTime))})},
+ fixedDeparture(e){const {field,options}=e.currentTarget.dataset,index=Number(e.detail.value);this.setData({['form.'+field]:index===0?'':this.data[options][index],result:null});this.syncRoutes();this.syncSchedule()},
  outboundTime(e){const index=Number(e.detail.value);this.setData({'form.outboundTime':index===0?'':this.data.outboundTimes[index],result:null});this.syncSchedule()},
  route(e){const field=e.currentTarget.dataset.field,index=Number(e.detail.value);this.setData({['form.'+field]:index===0?'':ROUTES[index-1].id,result:null});this.syncRoutes();this.syncSchedule()},
  transport(e){this.setData({'form.transportType':Number(e.detail.value)===0?'routes':'manual',result:null});this.syncSchedule()},

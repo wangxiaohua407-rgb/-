@@ -1,5 +1,11 @@
+const {departures}=require('./routes')
 // Business rule supplied by the operator: allow time for arrival and transfer.
 function scheduleIssue(form) {
+  if(form.transportType==='routes' && form.items[0].enabled){
+    for(const [id,time] of [[form.outbound,form.outbound==='0'?form.outboundTime:form.otherOutboundTime],[form.inbound,form.inboundTime]]){
+      if(time && !departures(id).includes(time)) return '所选发车时间不在该线路班次表中，请重新选择'
+    }
+  }
   if(form.nightReturn && form.nightReturnTime && !['18:00','20:00'].includes(form.nightReturnTime) && !(form.items[3].enabled && Number(form.yangcaoPlan)===1)) return '夜间雪乡回雪谷请选择18:00或20:00'
   if(form.items[3].enabled && form.date && form.yangcaoDate && form.yangcaoDate<form.date) return '羊草山游玩日期不能早于出行日期'
   if (!form.items[2].enabled) return ''

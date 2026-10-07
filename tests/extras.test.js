@@ -1,0 +1,10 @@
+const test=require('node:test'),assert=require('node:assert/strict')
+const {calculate,ITEMS}=require('../utils/quote')
+const {itinerary}=require('../utils/itinerary')
+const {ROUTES}=require('../utils/routes')
+const {newTrip}=require('../utils/supplement')
+function form(){return {people:'3',nights:'1',rooms:'1',relativeDays:true,wusongDay:0,items:ITEMS.map(item=>({...item,enabled:false,mode:0,price:item.defaultPrice||''}))}}
+test('联乘紧接哈尔滨雪谷，旧线路ID保持不变',()=>{assert.deepEqual(ROUTES.slice(0,2).map(x=>x.id),['0','14']);assert.equal(ROUTES.find(x=>x.id==='2').price,80)})
+test('补充车费可多段，每人价与整车价准确汇总',()=>{const f=form();f.supplementEnabled=true;f.supplementTrips=[{...newTrip(),route:0,price:'60',people:'2',day:2,time:'13:00'},{...newTrip(),route:1,mode:1,price:'350',day:2,time:'20:00'}];assert.equal(calculate(f).totalCents,47000);const rows=itinerary(f);assert.equal(rows.length,2);assert.ok(rows.every(x=>x.dateLabel==='第二天'));assert.match(rows[1].title,/包车/);f.supplementTrips[0].people='';assert.equal(calculate(f).totalCents,53000);f.supplementTrips[0].people='4';assert.throws(()=>calculate(f));f.supplementTrips[0].people='2';f.supplementTrips[1].price='';assert.throws(()=>calculate(f))})
+test('关闭补充车费不校验空价格，不增加费用',()=>{const f=form();f.supplementEnabled=false;f.supplementTrips=[newTrip()];assert.equal(calculate(f).totalCents,0)})
+test('新增雪谷跑圈及滑雪场默认价格与时间行程',()=>{const f=form();f.items[4].enabled=true;f.items[5].enabled=true;f.circleDay=1;f.circleTime='16:00';f.skiDay=2;f.skiTime='9:00';assert.equal(calculate(f).totalCents,90000);const rows=itinerary(f);assert.equal(rows[0].dateLabel,'第一天');assert.match(rows[0].detail,/半小时/);assert.equal(rows[1].dateLabel,'第二天');assert.match(rows[1].detail,/200元/);f.items[4].enabled=false;assert.equal(calculate(f).totalCents,60000)})

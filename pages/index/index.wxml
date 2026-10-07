@@ -22,7 +22,7 @@
 
     <view class="section-title"><view><text class="section-number">02</text><text>选择旅途体验</text></view><text class="section-caption">按需开启项目</text></view>
     <view class="card experience-card" wx:for="{{form.items}}" wx:key="key">
-      <view class="card-top"><view class="experience-title"><text class="item-mark mark-{{item.key}}">{{index + 1}}</text><view><view class="card-name">{{item.name}}</view><view class="card-subtitle">{{item.key === 'transport' ? '选好班次，安心出发' : item.key === 'stay' ? '住进雪谷的温暖夜晚' : item.key === 'wusong' ? '雾凇、摩托与山顶风景' : '穿越雪山，或套票畅玩'}}</view></view></view><switch color="#b58745" checked="{{item.enabled}}" data-index="{{index}}" data-field="enabled" bindchange="item"/></view>
+      <view class="card-top"><view class="experience-title"><text class="item-mark mark-{{item.key}}">{{index + 1}}</text><view><view class="card-name">{{item.name}}</view><view class="card-subtitle">{{item.key === 'transport' ? '选好班次，安心出发' : item.key === 'stay' ? '住进雪谷的温暖夜晚' : item.key === 'wusong' ? '雾凇、摩托与山顶风景' : item.key === 'yangcao' ? '穿越雪山，或套票畅玩' : item.key === 'circle' ? '100元 / 人 · 约半小时' : '200元 / 人 · 雪谷内游玩'}}</view></view></view><switch color="#b58745" checked="{{item.enabled}}" data-index="{{index}}" data-field="enabled" bindchange="item"/></view>
       <view wx:if="{{!item.enabled}}" class="disabled-note">本次行程不包含此项目</view>
       <block wx:if="{{item.enabled}}">
         <block wx:if="{{item.key === 'transport'}}">
@@ -56,6 +56,11 @@
           <view wx:if="{{detailOpen.wusong}}" class="details"><view>往返接送到山脚，车程约30分钟；返程车辆陆续发车。</view><view>包含：山脚至山顶往返雪地摩托、摩托丛林穿越、赏雾凇、山顶看日落、山顶摩托自驾、滑雪、雪爬犁、雪地长龙、雪地龙舟、雪飘。</view><view>现金支付，没有现金可找客栈老板换。每天小满老爸免费带玩，360全景相机免费拍视频记录。</view></view>
         </block>
 
+        <block wx:if="{{item.key === 'circle' || item.key === 'ski'}}">
+          <view wx:if="{{item.key === 'circle'}}" class="tip">雪谷内马拉爬犁跑圈约半小时，与羊草山进山马拉爬犁为不同项目。</view>
+          <view class="field"><text class="field-label">游玩安排</text><picker range="{{dayLabels}}" value="{{item.key === 'circle' ? form.circleDay : form.skiDay}}" data-field="{{item.key === 'circle' ? 'circleDay' : 'skiDay'}}" bindchange="selectDay"><view class="field-value">{{dayLabels[item.key === 'circle' ? form.circleDay : form.skiDay]}}<text class="chevron">⌄</text></view></picker></view>
+          <view class="field"><text class="field-label">开始时间</text><picker mode="time" value="{{item.key === 'circle' ? form.circleTime : form.skiTime}}" data-field="{{item.key === 'circle' ? 'circleTime' : 'skiTime'}}" bindchange="field"><view class="field-value">{{(item.key === 'circle' ? form.circleTime : form.skiTime) || '待定'}}<text class="chevron">›</text></view></picker></view>
+        </block>
         <block wx:if="{{item.key === 'yangcao' && form.yangcaoOptions}}">
           <text class="small-label">选择玩法</text><picker range="{{yangcaoPlanLabels}}" value="{{form.yangcaoPlan}}" bindchange="yangcaoPlan"><view class="select-box">{{yangcaoPlanLabels[form.yangcaoPlan]}}<text class="chevron">⌄</text></view></picker>
           <view wx:if="{{form.yangcaoPlan == 1}}" class="package-panel"><view class="package-price"><view><text class="price-label">羊草山套票</text><view><text class="big-price">550</text><text class="price-unit">元 / 人</text></view></view><text class="badge">不去雪乡</text></view><view class="package-includes">马拉爬犁往返 · 天下第一漂 · 雪地摩托车</view><view class="hint">包含项目不再加价，无需雪乡回雪谷车票。儿童优惠待确认，暂按550元/人计。</view></view>
@@ -74,6 +79,23 @@
     </view>
 
     <view wx:if="{{!(form.items[3].enabled && form.yangcaoOptions && form.yangcaoPlan == 1)}}" class="card night-card"><view class="card-top"><view><view class="card-name">晚上从雪乡回雪谷</view><view class="card-subtitle">60元 / 人 · 车程约2小时</view></view><switch color="#b58745" checked="{{form.nightReturn}}" data-field="nightReturn" bindchange="field"/></view><block wx:if="{{form.nightReturn}}"><view class="field"><text class="field-label">返程安排</text><picker range="{{dayLabels}}" value="{{form.nightReturnDay}}" data-field="nightReturnDay" bindchange="selectDay"><view class="field-value">{{dayLabels[form.nightReturnDay]}}<text class="chevron">⌄</text></view></picker></view><view class="field"><text class="field-label">固定班次</text><picker range="{{nightReturnTimes}}" value="{{nightReturnTimeIndex}}" data-field="nightReturnTime" data-options="nightReturnTimes" bindchange="fixedDeparture"><view class="field-value">{{form.nightReturnTime || '选择18:00或20:00'}}<text class="chevron">⌄</text></view></picker></view><view class="hint">直通车已包含同一车票时，不会重复收费。</view></block></view>
+    <view class="card supplemental-card">
+      <view class="card-top"><view><view class="card-name">补充车费</view><view class="card-subtitle">去雪乡、包车回雪谷等额外用车</view></view><switch color="#b58745" checked="{{form.supplementEnabled}}" data-field="supplementEnabled" bindchange="field"/></view>
+      <block wx:if="{{form.supplementEnabled}}">
+        <view class="tip">这里只添加未计入直通车或60元夜间返程票的费用，避免重复。</view>
+        <view class="supplement-trip" wx:for="{{form.supplementTrips}}" wx:for-item="trip" wx:for-index="tripIndex" wx:key="id">
+          <view class="supplement-heading"><text>补充用车 {{tripIndex + 1}}</text><button class="remove-trip" data-index="{{tripIndex}}" bindtap="removeTrip">移除</button></view>
+          <picker range="{{supplementRoutes}}" value="{{trip.route}}" data-index="{{tripIndex}}" data-field="route" bindchange="supplementField"><view class="select-box">{{supplementRoutes[trip.route]}}<text class="chevron">⌄</text></view></picker>
+          <view wx:if="{{trip.route == 2}}" class="field"><text class="field-label">用车说明</text><input class="field-input" placeholder="填写出发地和目的地" value="{{trip.label}}" maxlength="40" data-index="{{tripIndex}}" data-field="label" bindinput="supplementField"/></view>
+          <text class="small-label">计费方式</text><picker range="{{supplementModes}}" value="{{trip.mode}}" data-index="{{tripIndex}}" data-field="mode" bindchange="supplementField"><view class="select-box">{{supplementModes[trip.mode]}}<text class="chevron">⌄</text></view></picker>
+          <view class="field"><text class="field-label">{{trip.mode == 1 ? '整车总价' : '每人单价'}}</text><view class="price-input"><text>¥</text><input type="digit" value="{{trip.price}}" placeholder="填写实际价格" data-index="{{tripIndex}}" data-field="price" bindinput="supplementField"/></view></view>
+          <view wx:if="{{trip.mode == 0}}" class="field"><text class="field-label">乘车人数</text><input class="field-input" type="number" value="{{trip.people}}" placeholder="{{'默认' + form.people + '人'}}" data-index="{{tripIndex}}" data-field="people" bindinput="supplementField"/></view>
+          <view class="field"><text class="field-label">用车安排</text><picker range="{{dayLabels}}" value="{{trip.day}}" data-index="{{tripIndex}}" data-field="day" bindchange="supplementField"><view class="field-value">{{dayLabels[trip.day]}}<text class="chevron">⌄</text></view></picker></view>
+          <view class="field"><text class="field-label">出发时间</text><picker mode="time" value="{{trip.time}}" data-index="{{tripIndex}}" data-field="time" bindchange="supplementField"><view class="field-value">{{trip.time || '待定'}}<text class="chevron">›</text></view></picker></view>
+        </view>
+        <button class="add-trip" bindtap="addTrip">＋ 再添加一段用车</button>
+      </block>
+    </view>
     <view class="card note-card"><text class="small-label">给客户的备注</text><textarea placeholder="例如集合地点、餐费说明、需要带的物品…" value="{{form.note}}" data-field="note" bindinput="field" maxlength="100" placeholder-class="placeholder" auto-height/></view>
     <button class="primary" bindtap="quote">生成我的行程与报价<text> →</text></button><view class="generate-hint">确认日期、班次和费用后，即可生成客户行程单</view>
 

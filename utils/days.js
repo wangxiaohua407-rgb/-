@@ -1,4 +1,4 @@
-const DAY_FIELDS={wusongDay:'wusongDate',yangcaoDay:'yangcaoDate',inboundDay:'inboundDate',nightReturnDay:'nightReturnDate'}
+const DAY_FIELDS={wusongDay:'wusongDate',yangcaoDay:'yangcaoDate',inboundDay:'inboundDate',nightReturnDay:'nightReturnDate',circleDay:'circleDate',skiDay:'skiDate'}
 function dayLabel(day){return ['日期待定','第一天','第二天','第三天','第四天','第五天','第六天','第七天'][day] || ('第'+day+'天')}
 function dateAt(start,day){
   if(!start || !day) return ''

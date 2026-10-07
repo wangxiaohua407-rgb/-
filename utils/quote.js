@@ -1,10 +1,13 @@
+const {tripLabel}=require('./supplement')
 const {scheduleIssue}=require('./schedule')
 const {fare}=require('./routes')
 const ITEMS = [
   {key:'transport', name:'往返车费', units:['整团往返','每人往返']},
   {key:'stay', name:'住宿费', units:['每人每晚','每间每晚']},
   {key:'wusong', name:'雾凇岭', defaultPrice:'400', units:['每人','整团']},
-  {key:'yangcao', name:'羊草山', units:['每人','整团']}
+  {key:'yangcao', name:'羊草山', units:['每人','整团']},
+  {key:'circle',name:'雪谷内马拉爬犁跑圈',defaultPrice:'100',optional:true,units:['每人']},
+  {key:'ski',name:'雪谷滑雪场',defaultPrice:'200',optional:true,units:['每人']}
 ]
 function integer(value, name) {
   if (!/^\d+$/.test(String(value)) || Number(value)<1 || Number(value)>9999) throw new Error(name+'请输入1至9999的整数')
@@ -19,8 +22,9 @@ function calculate(form) {
   const issue=scheduleIssue(form);if(issue) throw new Error(issue)
   const people=integer(form.people,'人数'), nights=integer(form.nights,'晚数'), rooms=integer(form.rooms,'房间数')
   const lines=ITEMS.map((item,index)=>{
-    const row=form.items[index], mode=Number(row.mode)
-    if (![0,1].includes(mode)) throw new Error('计费方式无效')
+    const row=form.items[index];if(!row)return null
+    const mode=Number(row.mode)
+    if (![0,1].includes(mode) || mode>=item.units.length) throw new Error('计费方式无效')
     let qty=index===0?(mode===0?1:people):index===1?(mode===0?people*nights:rooms*nights):(mode===0?people:1)
     if (!row.enabled) qty=0
     let unitCents=row.enabled && !(index===0 && form.transportType==='routes') && !(index===2 && form.wusongPackage) && !(index===3 && form.yangcaoOptions)?cents(row.price):0
@@ -52,10 +56,21 @@ function calculate(form) {
       return {name:'羊草山穿越',unit:'每人',qty:people,unitCents:perPerson*100,amountCents:(perPerson*people-40*free)*100,enabled:true,detail}
     }
     return {name:item.name,unit:index===0 && form.transportType==='routes'?'每人所选车程':item.units[mode],qty,unitCents,amountCents:qty*unitCents,enabled:row.enabled}
-  })
+  }).filter(Boolean)
   if(form.nightReturn && !(form.items[3].enabled && form.yangcaoOptions && Number(form.yangcaoPlan)===1)){
     const covered=form.transportType==='routes' && form.items[0].enabled && [form.outbound,form.inbound].includes('15')
     lines.push({name:'夜间雪乡→雪谷车票',unit:'每人',qty:people,unitCents:covered?0:6000,amountCents:covered?0:people*6000,enabled:true,detail:covered?'已含在所选直通车费中，不重复收费':'18:00 / 20:00；60元/人'})
+  }
+  if(form.supplementEnabled){
+    if(!Array.isArray(form.supplementTrips) || !form.supplementTrips.length || form.supplementTrips.length>5)throw new Error('请添加1至5段补充用车')
+    form.supplementTrips.forEach((trip,index)=>{
+      const mode=Number(trip.mode),route=Number(trip.route)
+      if(![0,1].includes(mode)||![0,1,2].includes(route))throw new Error('请选择有效补充用车计费方式及线路')
+      const day=Number(trip.day||0);if(!Number.isInteger(day)||day<0||day>366)throw new Error('请选择有效补充用车天数')
+      const unitCents=cents(trip.price),qty=mode===1?1:integer(trip.people||form.people,'补充用车人数')
+      if(mode===0 && qty>people)throw new Error('补充用车人数不能超过出行总人数')
+      lines.push({name:'补充车费'+(index+1)+' · '+tripLabel(trip),unit:mode===1?'整车':'每人',qty,unitCents,amountCents:qty*unitCents,enabled:true,detail:mode===1?'整车包车价，仅计一次':qty+'人，每人'+money(unitCents)+'元'})
+    })
   }
   const totalCents=lines.reduce((sum,line)=>sum+line.amountCents,0)
   return {lines,totalCents,perPersonCents:Math.round(totalCents/people)}
